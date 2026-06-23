@@ -5,6 +5,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.2",
+        "ext-bcmath": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/doctrine-bundle": "^3.2",
@@ -17,7 +18,10 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "7.3.*",
         "symfony/messenger": "7.3.*",
+        "symfony/property-access": "7.3.*",
+        "symfony/property-info": "7.3.*",
         "symfony/runtime": "7.3.*",
+        "symfony/serializer": "7.3.*",
         "symfony/uid": "7.3.*",
         "symfony/validator": "7.3.*",
         "symfony/yaml": "7.3.*"

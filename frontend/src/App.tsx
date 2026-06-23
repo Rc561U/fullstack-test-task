@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchTransactions } from "./api/client";
 import { TransactionsTable } from "./components/TransactionsTable";
 import type { Transaction } from "./types";
+import { updateTransactionAfterRefund } from "./utils/transactionState";
 import "./App.css";
 
 export default function App() {
@@ -30,6 +31,15 @@ export default function App() {
     };
   }, []);
 
+  const handleTransactionRefunded = useCallback(
+    (transactionId: number, refundAmount: string) => {
+      setTransactions((current) =>
+        updateTransactionAfterRefund(current, transactionId, refundAmount),
+      );
+    },
+    [],
+  );
+
   return (
     <main className="app">
       <h1>Transactions</h1>
@@ -42,7 +52,10 @@ export default function App() {
       )}
 
       {!loading && !error && transactions.length > 0 && (
-        <TransactionsTable transactions={transactions} />
+        <TransactionsTable
+          transactions={transactions}
+          onTransactionRefunded={handleTransactionRefunded}
+        />
       )}
     </main>
   );

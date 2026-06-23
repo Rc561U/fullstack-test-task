@@ -18,11 +18,8 @@ final class MerchantNotificationHandler
 
     public function __invoke(MerchantNotification $message): void
     {
-        try {
-            $merchant = $this->merchants->find($message->merchantId);
-            $this->send($merchant, $message->message);
-        } catch (\Throwable $e) {
-        }
+        $merchant = $this->merchants->find($message->merchantId);
+        $this->send($merchant, $message->message);
     }
 
     private function send(?object $merchant, string $text): void

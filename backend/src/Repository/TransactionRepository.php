@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Transaction;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -22,8 +23,20 @@ class TransactionRepository extends ServiceEntityRepository
     public function findForListing(): array
     {
         return $this->createQueryBuilder('t')
+            ->join('t.merchant', 'm')
+            ->addSelect('m')
             ->orderBy('t.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function findForRefundLocked(int $id): ?Transaction
+    {
+        return $this->createQueryBuilder('t')
+            ->where('t.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
     }
 }

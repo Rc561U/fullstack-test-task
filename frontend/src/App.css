@@ -85,6 +85,11 @@
   color: #b42318;
 }
 
+.status-partially_refunded {
+  background: #fff4e5;
+  color: #9a6700;
+}
+
 .refund-btn {
   padding: 5px 12px;
   font-size: 13px;
@@ -104,4 +109,124 @@
 .refund-btn:focus-visible {
   outline: 2px solid #2970ff;
   outline-offset: 1px;
+}
+
+.refund-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.refund-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.refund-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.12);
+}
+
+.refund-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 0;
+}
+
+.refund-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.refund-modal-close {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: #667085;
+  cursor: pointer;
+}
+
+.refund-modal-meta {
+  margin: 12px 20px 0;
+  color: #667085;
+  font-size: 14px;
+}
+
+.refund-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.refund-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #344054;
+}
+
+.refund-field input,
+.refund-field textarea {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #101828;
+}
+
+.refund-field small {
+  color: #667085;
+}
+
+.refund-modal-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 14px;
+}
+
+.refund-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.refund-secondary-btn,
+.refund-primary-btn {
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.refund-secondary-btn {
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #344054;
+}
+
+.refund-primary-btn {
+  border: 1px solid #2970ff;
+  background: #2970ff;
+  color: #fff;
+}
+
+.refund-primary-btn:disabled,
+.refund-secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

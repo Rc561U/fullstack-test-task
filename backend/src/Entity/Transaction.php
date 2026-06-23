@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TransactionRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
@@ -41,9 +43,14 @@ class Transaction
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
 
+    /** @var Collection<int, Refund> */
+    #[ORM\OneToMany(targetEntity: Refund::class, mappedBy: 'transaction')]
+    private Collection $refunds;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->refunds = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -150,5 +157,13 @@ class Transaction
     public function getCreatedAt(): \DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    /**
+     * @return Collection<int, Refund>
+     */
+    public function getRefunds(): Collection
+    {
+        return $this->refunds;
     }
 }

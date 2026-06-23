@@ -28,6 +28,7 @@ class LoadFixturesCommand extends Command
 
         $platform = $this->connection->getDatabasePlatform();
         $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS=0');
+        $this->connection->executeStatement($platform->getTruncateTableSQL('refund', true));
         $this->connection->executeStatement($platform->getTruncateTableSQL('transaction', true));
         $this->connection->executeStatement($platform->getTruncateTableSQL('merchant', true));
         $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS=1');

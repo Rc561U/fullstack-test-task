@@ -15,11 +15,10 @@ class ProviderClient
     public function refund(string $externalId, string $amount, string $currency): array
     {
         $this->logger->info(sprintf(
-            'Provider refund request externalId=%s amount=%s %s apiKey=%s',
+            'Provider refund request externalId=%s amount=%s %s',
             $externalId,
             $amount,
             $currency,
-            $this->apiKey,
         ));
 
         return [

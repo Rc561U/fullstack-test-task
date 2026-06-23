@@ -15,8 +15,8 @@ class BalanceService
     {
         $merchant = $tx->getMerchant();
 
-        $net = (float) $tx->getAmount() - (float) $tx->getFee();
-        $merchant->setBalance(number_format((float) $merchant->getBalance() + $net, 2, '.', ''));
+        $net = bcsub($tx->getAmount(), $tx->getFee(), 2);
+        $merchant->setBalance(bcadd($merchant->getBalance(), $net, 2));
         $this->em->flush();
 
         $tx->setStatus('settled');
