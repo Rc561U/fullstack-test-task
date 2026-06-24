@@ -46,6 +46,22 @@ class Refund
         $this->createdAt = new \DateTimeImmutable();
     }
 
+    public static function createPending(
+        Transaction $transaction,
+        string $amount,
+        string $reason,
+        string $idempotencyKey,
+    ): self {
+        $refund = new self();
+        $refund->setTransaction($transaction);
+        $refund->setAmount($amount);
+        $refund->setReason($reason);
+        $refund->setIdempotencyKey($idempotencyKey);
+        $refund->setStatus(self::STATUS_PENDING);
+
+        return $refund;
+    }
+
     public function getId(): ?int
     {
         return $this->id;

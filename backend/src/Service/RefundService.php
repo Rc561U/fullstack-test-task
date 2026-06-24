@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Dto\RefundRequest;
 use App\Entity\Refund;
+use App\Entity\Transaction;
 use App\Exception\RefundNotAllowedException;
 use App\Exception\TransactionNotFoundException;
 use App\Message\MerchantNotification;
@@ -35,8 +36,9 @@ class RefundService
         }
 
         $connection = $this->em->getConnection();
-        $connection->beginTransaction();
 
+        // TX 1: validate, persist refund as PENDING, commit
+        $connection->beginTransaction();
         try {
             $transaction = $this->transactions->findForRefundLocked($transactionId);
 
@@ -46,33 +48,9 @@ class RefundService
 
             $this->assertRefundable($transaction, $request->amount);
 
-            $refund = new Refund();
-            $refund->setTransaction($transaction);
-            $refund->setAmount($request->amount);
-            $refund->setReason($request->reason);
-            $refund->setIdempotencyKey($idempotencyKey->value);
-            $refund->setStatus(Refund::STATUS_PENDING);
+            $refund = Refund::createPending($transaction, $request->amount, $request->reason, $idempotencyKey->value);
 
             $this->em->persist($refund);
-            $this->em->flush();
-
-            $providerResult = $this->provider->refund(
-                $transaction->getExternalId(),
-                $request->amount,
-                $transaction->getCurrency(),
-            );
-
-            $refund->setProviderRefundId($providerResult['providerRefundId'] ?? null);
-            $refund->setStatus(Refund::STATUS_ACCEPTED);
-
-            $newRefundedAmount = bcadd($transaction->getRefundedAmount(), $request->amount, 2);
-            $transaction->setRefundedAmount($newRefundedAmount);
-            $transaction->setStatus(
-                bccomp($newRefundedAmount, $transaction->getAmount(), 2) >= 0
-                    ? 'refunded'
-                    : 'partially_refunded',
-            );
-
             $this->em->flush();
             $connection->commit();
         } catch (UniqueConstraintViolationException $e) {
@@ -90,17 +68,86 @@ class RefundService
             throw $e;
         }
 
+        // Outside TX: call provider
+        try {
+            $providerResult = $this->provider->refund(
+                $transaction->getExternalId(),
+                $request->amount,
+                $transaction->getCurrency(),
+            );
+
+            if (empty($providerResult['providerRefundId'])) {
+                throw new \RuntimeException('Provider returned no refundId');
+            }
+        } catch (\Throwable $e) {
+            $this->markRefundFailed($refund);
+
+            throw $e;
+        }
+
+        // TX 2: update refund status + transaction amounts
+        $this->applyRefundAccepted($refund, $transaction, $providerResult['providerRefundId'], $request->amount);
+
+        $this->em->refresh($transaction);
+        $this->notifyMerchant($transaction, $request->amount);
+
+        return new RefundResult($refund, true);
+    }
+
+    private function applyRefundAccepted(Refund $refund, Transaction $transaction, string $providerRefundId, string $amount): void
+    {
+        $connection = $this->em->getConnection();
+        $connection->beginTransaction();
+        try {
+            $refund->setProviderRefundId($providerRefundId);
+            $refund->setStatus(Refund::STATUS_ACCEPTED);
+
+            $alreadyRefunded = $transaction->getRefundedAmount() ?? '0.00';
+            $newRefundedAmount = bcadd($alreadyRefunded, $amount, 2);
+            $transaction->setRefundedAmount($newRefundedAmount);
+            $transaction->setStatus(
+                bccomp($newRefundedAmount, $transaction->getAmount(), 2) >= 0
+                    ? 'refunded'
+                    : 'partially_refunded',
+            );
+
+            $this->em->flush();
+            $connection->commit();
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+
+            throw $e;
+        }
+    }
+
+    private function notifyMerchant(Transaction $transaction, string $amount): void
+    {
         $this->bus->dispatch(new MerchantNotification(
             $transaction->getMerchant()->getId(),
             sprintf(
                 'Refund of %s %s accepted for transaction %d',
-                $request->amount,
+                $amount,
                 $transaction->getCurrency(),
                 $transaction->getId(),
             ),
         ));
+    }
 
-        return new RefundResult($refund, true);
+    private function markRefundFailed(Refund $refund): void
+    {
+        if (null === $refund->getId()) {
+            return;
+        }
+
+        $connection = $this->em->getConnection();
+        $connection->beginTransaction();
+        try {
+            $refund->setStatus(Refund::STATUS_FAILED);
+            $this->em->flush();
+            $connection->commit();
+        } catch (\Throwable) {
+            $connection->rollBack();
+        }
     }
 
     private function assertRefundable(Transaction $transaction, string $amount): void
