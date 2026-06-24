@@ -85,14 +85,19 @@ export function RefundModal({ transaction, onClose, onSuccess }: RefundModalProp
     }
   }
 
+  function handleBackdropMouseDown(event: React.MouseEvent<HTMLDivElement>) {
+    if (event.target === event.currentTarget) {
+      onClose();
+    }
+  }
+
   return (
-    <div className="refund-modal-backdrop" onClick={onClose}>
+    <div className="refund-modal-backdrop" onMouseDown={handleBackdropMouseDown}>
       <div
         className="refund-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="refund-modal-title"
-        onClick={(event) => event.stopPropagation()}
       >
         <header className="refund-modal-header">
           <h2 id="refund-modal-title">Возврат по транзакции #{transaction.id}</h2>
