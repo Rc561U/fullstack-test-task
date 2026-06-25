@@ -30,24 +30,32 @@ class RefundService
 
     public function refund(int $transactionId, RefundRequest $request, IdempotencyKey $idempotencyKey): RefundResult
     {
+        // проверка наличия существующей транзакции 
         $existing = $this->refunds->findByIdempotencyKey($idempotencyKey->value);
+        // здесь проверям соответствие существующекго $idempotencyKey
         if (null !== $existing) {
+            // если $idempotencyKey не найдет, то создаем сущность RefundResult и возвращаем false
             return new RefundResult($existing, false);
         }
 
+        // открываем новый конекшен в энтити менеджере.
         $connection = $this->em->getConnection();
 
         // TX 1: validate, persist refund as PENDING, commit
+        // Открываем процесс mysql - транзакция
         $connection->beginTransaction();
-        try {
-            $transaction = $this->transactions->findForRefundLocked($transactionId);
 
+        try {
+            // здесь используем $transactionId и находим по нему существующую $transaction в базе данных
+            $transaction = $this->transactions->findForRefundLocked($transactionId);
+            
             if (null === $transaction) {
                 throw TransactionNotFoundException::forId($transactionId);
             }
 
             $this->assertRefundable($transaction, $request->amount);
 
+            // Создаем сущность Refund которая содержит основные данные о рефанде amount reason $idempotencyKey)
             $refund = Refund::createPending($transaction, $request->amount, $request->reason, $idempotencyKey->value);
 
             $this->em->persist($refund);
@@ -55,8 +63,7 @@ class RefundService
             $connection->commit();
         } catch (UniqueConstraintViolationException $e) {
             $connection->rollBack();
-
-            $existing = $this->refunds->findByIdempotencyKey($idempotencyKey->value);
+            
             if (null !== $existing) {
                 return new RefundResult($existing, false);
             }
@@ -64,7 +71,6 @@ class RefundService
             throw $e;
         } catch (\Throwable $e) {
             $connection->rollBack();
-
             throw $e;
         }
 
