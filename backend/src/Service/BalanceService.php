@@ -19,7 +19,7 @@ class BalanceService
         $net = bcsub($tx->getAmount(), $tx->getFee(), 2);
         if(isset($merchant){
            $merchant->setBalance(bcadd($merchant->getBalance(), $net, 2));
-           $this->em->flush();
+           $this->em->persist();
         }
         
         $tx->setStatus('settled');
