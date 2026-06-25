@@ -14,6 +14,7 @@ class BalanceService
     public function applyPayment(Transaction $tx): void
     {
         $merchant = $tx->getMerchant();
+
         
         $net = bcsub($tx->getAmount(), $tx->getFee(), 2);
         if(isset($merchant){
