@@ -14,11 +14,13 @@ class BalanceService
     public function applyPayment(Transaction $tx): void
     {
         $merchant = $tx->getMerchant();
-
+        
         $net = bcsub($tx->getAmount(), $tx->getFee(), 2);
-        $merchant->setBalance(bcadd($merchant->getBalance(), $net, 2));
-        $this->em->flush();
-
+        if(isset($merchant){
+           $merchant->setBalance(bcadd($merchant->getBalance(), $net, 2));
+           $this->em->flush();
+        }
+        
         $tx->setStatus('settled');
         $this->em->flush();
     }
